@@ -1,0 +1,95 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class PhotoPuzzle extends JPanel {
+
+    private BufferedImage originalImage;
+    private List<ImagePiece> pieces = new ArrayList<>();
+    private int rows;
+    private int cols;
+
+    private class ImagePiece {
+        BufferedImage image;
+        int row;
+        int col;
+
+        ImagePiece(BufferedImage image, int row, int col) {
+            this.image = image;
+            this.row = row;
+            this.col = col;
+        }
+    }
+
+    public PhotoPuzzle(String imagePath, int rows, int cols) {
+        this.rows = rows;
+        this.cols = cols;
+
+        originalImage = loadImage(imagePath);
+        createPuzzle();
+        shufflePuzzle();
+
+        Timer timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                shufflePuzzle();
+            }
+        });
+        timer.setRepeats(true);
+        timer.start();
+    }
+
+    private BufferedImage loadImage(String imagePath) {
+        try {
+            return ImageIO.read(getClass().getResource(imagePath));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void createPuzzle() {
+        int pieceWidth = originalImage.getWidth() / cols;
+        int pieceHeight = originalImage.getHeight() / rows;
+
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                BufferedImage pieceImage = originalImage.getSubimage(x * pieceWidth, y * pieceHeight, pieceWidth, pieceHeight);
+                pieces.add(new ImagePiece(pieceImage, y, x));
+            }
+        }
+    }
+
+    private void shufflePuzzle() {
+        Collections.shuffle(pieces);
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        int pieceWidth = getWidth() / cols;
+        int pieceHeight = getHeight() / rows;
+
+        for (ImagePiece piece : pieces) {
+            int x = piece.col * pieceWidth;
+            int y = piece.row * pieceHeight;
+            g.drawImage(piece.image, x, y, pieceWidth, pieceHeight, null);
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Photo Puzzle");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(400, 400);
+            frame.add(new PhotoPuzzle("your_image.jpg", 3, 3)); // Replace with your image path
+            frame.setVisible(true);
+        });
+    }
+}
